@@ -7,21 +7,24 @@ from datetime import datetime
 from calendar import monthrange
 
 employees = ['andrzej.urban@ocado.com', 'marcin.czapla@ocado.com', 's.surovikin@ocado.com', 'alexey.eraskin@ocado.com']
-holidays = ['22/04/2019 11:00']
+holidays = ['22/04', '1/05', '3/05', '9/06', '20/06', '15/08', '1/11', '11/11', '25/12', '26/12']  # TODO 9/06 is sunday
+HOLIDAY_SUFFIX = '/2019 11:00'
 events = []
 dateformat = "%d/%m/%Y %H:%M"
 
 
-def dataart_employee(event):
-    return event.get('ATTENDEE') in employees
+def dataart_employee(shift):
+    return shift.get('ATTENDEE') in employees
+
 
 def to_date(date):
     return datetime.strptime(date, dateformat)
 
-def current_month(event):
+
+def current_month(shift):
     today = datetime.today()
-    eventDateStart = to_date(event['start'])
-    eventDateEnd = to_date(event['end'])
+    eventDateStart = to_date(shift['start'])
+    eventDateEnd = to_date(shift['end'])
     firstDayDate = datetime(today.year, today.month, 1)
     lastDayDate = datetime(today.year, today.month, monthrange(today.year, today.month)[1])
 
@@ -52,8 +55,9 @@ for event in events:
         print("Fri-Sun: 3")
         holiday = 0
         for day in holidays:
-            if (to_date(day) > to_date(event['start'])) & (to_date(day) < to_date(event['end'])):
-                holiday = holiday+1
+            if (to_date(day + HOLIDAY_SUFFIX) > to_date(event['start'])) & (
+                    to_date(day + HOLIDAY_SUFFIX) < to_date(event['end'])):
+                holiday = holiday + 1
         print("Holiday: {0}".format(holiday))
         # eventDateStart = to_date(event['start'])
         # eventDateEnd = to_date(event['end'])
