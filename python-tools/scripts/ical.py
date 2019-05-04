@@ -9,8 +9,9 @@ from calendar import monthrange
 employees = ['andrzej.urban@ocado.com', 'marcin.czapla@ocado.com', 's.surovikin@ocado.com', 'alexey.eraskin@ocado.com']
 holidays = ['22/04', '1/05', '3/05', '9/06', '20/06', '15/08', '1/11', '11/11', '25/12', '26/12']  # TODO 9/06 is sunday
 HOLIDAY_SUFFIX = '/2019 11:00'
+DATE_FORMAT = "%d/%m/%Y %H:%M"
+REPORT_DATE = datetime.today()
 events = []
-dateformat = "%d/%m/%Y %H:%M"
 
 
 def dataart_employee(shift):
@@ -18,25 +19,22 @@ def dataart_employee(shift):
 
 
 def to_date(date):
-    return datetime.strptime(date, dateformat)
+    return datetime.strptime(date, DATE_FORMAT)
 
 
 def day_in_current_month(day_checked):
-    today = datetime.today()
+    today = REPORT_DATE
     firstDayDate = datetime(today.year, today.month, 1)
     lastDayDate = datetime(today.year, today.month, monthrange(today.year, today.month)[1], 23, 59, 59)
     return (day_checked > firstDayDate) & (day_checked <= lastDayDate)
 
 
 def current_month(shift):
-    today = datetime.today()
-    eventDateStart = to_date(shift['start'])
-    eventDateEnd = to_date(shift['end'])
-    firstDayDate = datetime(today.year, today.month, 1)
-    lastDayDate = datetime(today.year, today.month, monthrange(today.year, today.month)[1])
+    event_date_start = to_date(shift['start'])
+    event_date_end = to_date(shift['end'])
 
-    startedThisMonth = (eventDateStart > firstDayDate) & (eventDateStart < lastDayDate)
-    finishedThisMonth = (eventDateEnd > firstDayDate) & (eventDateEnd < lastDayDate)
+    startedThisMonth = day_in_current_month(event_date_start)
+    finishedThisMonth = day_in_current_month(event_date_end)
     return startedThisMonth | finishedThisMonth
 
 
@@ -51,8 +49,8 @@ for component in gcal.walk():
         events.append({
             'summary': component.get('summary'),
             'person': component.get('ATTENDEE'),
-            'start': component.get('dtstart').dt.strftime(dateformat),
-            'end': component.get('dtend').dt.strftime(dateformat)
+            'start': component.get('dtstart').dt.strftime(DATE_FORMAT),
+            'end': component.get('dtend').dt.strftime(DATE_FORMAT)
         })
 
 for event in events:
@@ -74,4 +72,4 @@ for event in events:
         print("{0} - {1} {2}".format(event['start'], event['end'], event['person'].split('@')[0]))
         print("Mon-Thru: {0}".format(sum_workday))
         print("Fri-Sun: {0}".format(sum_weekends))
-        print("Holiday: {0} \n".format(holiday))
+        print("Holiday: {0} \n".format(holiday) if holiday > 0 else '')
