@@ -3,7 +3,7 @@
 
 import icalendar
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 from calendar import monthrange
 
 employees = ['andrzej.urban@ocado.com', 'marcin.czapla@ocado.com', 's.surovikin@ocado.com', 'alexey.eraskin@ocado.com']
@@ -19,6 +19,13 @@ def dataart_employee(shift):
 
 def to_date(date):
     return datetime.strptime(date, dateformat)
+
+
+def day_in_current_month(day_checked):
+    today = datetime.today()
+    firstDayDate = datetime(today.year, today.month, 1)
+    lastDayDate = datetime(today.year, today.month, monthrange(today.year, today.month)[1], 23, 59, 59)
+    return (day_checked > firstDayDate) & (day_checked <= lastDayDate)
 
 
 def current_month(shift):
@@ -50,16 +57,21 @@ for component in gcal.walk():
 
 for event in events:
     if current_month(event):
-        print("{0} - {1} {2}".format(event['start'], event['end'], event['person'].split('@')[0]))
-        print("Mon-Thru: 4")
-        print("Fri-Sun: 3")
         holiday = 0
         for day in holidays:
             if (to_date(day + HOLIDAY_SUFFIX) > to_date(event['start'])) & (
                     to_date(day + HOLIDAY_SUFFIX) < to_date(event['end'])):
                 holiday = holiday + 1
-        print("Holiday: {0}".format(holiday))
-        # eventDateStart = to_date(event['start'])
-        # eventDateEnd = to_date(event['end'])
-        # delta = eventDateEnd - eventDateStart
-        # print("dd: {0}".format(delta.days))
+
+        eventDateStart = to_date(event['start'])
+        eventDateEnd = to_date(event['end'])
+        delta = eventDateEnd - eventDateStart
+        daygen = (eventDateStart + timedelta(x) for x in range((eventDateEnd - eventDateStart).days))
+        sum_workday = sum(1 for day in daygen if (day.weekday() < 4) & day_in_current_month(day))
+        daygen = (eventDateStart + timedelta(x) for x in range((eventDateEnd - eventDateStart).days))
+        sum_weekends = sum(1 for day in daygen if (day.weekday() >= 4) & day_in_current_month(day))
+
+        print("{0} - {1} {2}".format(event['start'], event['end'], event['person'].split('@')[0]))
+        print("Mon-Thru: {0}".format(sum_workday))
+        print("Fri-Sun: {0}".format(sum_weekends))
+        print("Holiday: {0} \n".format(holiday))
