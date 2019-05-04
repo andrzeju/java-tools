@@ -38,6 +38,10 @@ def current_month(shift):
     return startedThisMonth | finishedThisMonth
 
 
+def days_generator():
+    return (eventDateStart + timedelta(x) for x in range((eventDateEnd - eventDateStart).days))
+
+
 r = requests.get(
     'https://ocado-tech-osp.pagerduty.com/private/c24f7099aece486ec80efc7fca6480ca6c5635ae23830da75d564516c5efc067'
     '/feed/PS0X7ZR')
@@ -64,10 +68,10 @@ for event in events:
         eventDateStart = to_date(event['start'])
         eventDateEnd = to_date(event['end'])
         delta = eventDateEnd - eventDateStart
-        daygen = (eventDateStart + timedelta(x) for x in range((eventDateEnd - eventDateStart).days))
-        sum_workday = sum(1 for day in daygen if (day.weekday() < 4) & day_in_current_month(day))
-        daygen = (eventDateStart + timedelta(x) for x in range((eventDateEnd - eventDateStart).days))
-        sum_weekends = sum(1 for day in daygen if (day.weekday() >= 4) & day_in_current_month(day))
+        day_gen = days_generator()
+        sum_workday = sum(1 for day in day_gen if (day.weekday() < 4) & day_in_current_month(day))
+        day_gen = days_generator()
+        sum_weekends = sum(1 for day in day_gen if (day.weekday() >= 4) & day_in_current_month(day))
 
         print("{0} - {1} {2}".format(event['start'], event['end'], event['person'].split('@')[0]))
         print("Mon-Thru: {0}".format(sum_workday))
