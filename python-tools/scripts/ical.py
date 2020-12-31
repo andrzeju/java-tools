@@ -68,6 +68,8 @@ for event in events:
         eventDateStart = to_date(event['start'])
         eventDateEnd = to_date(event['end'])
         delta = eventDateEnd - eventDateStart
+        if delta < timedelta(days=1):
+            delta = timedelta(days=1)
         day_gen = days_generator()
         sum_workday = sum(1 for day in day_gen if (day.weekday() < 4) & day_in_current_month(day))
         day_gen = days_generator()
