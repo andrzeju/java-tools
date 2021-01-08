@@ -5,13 +5,18 @@ import icalendar
 import requests
 from datetime import datetime, timedelta
 from calendar import monthrange
+from scripts.person import PersonSummary
 
-employees = ['andrzej.urban@ocado.com', 'marcin.czapla@ocado.com', 's.surovikin@ocado.com', 'alexey.eraskin@ocado.com']
-holidays = ['22/04', '1/05', '3/05', '9/06', '20/06', '15/08', '1/11', '11/11', '25/12', '26/12']  # TODO 9/06 is sunday
-HOLIDAY_SUFFIX = '/2019 11:00'
-DATE_FORMAT = "%d/%m/%Y %H:%M"
+employees = ['andrzej.urban@ocado.com', 'marcin.czapla@ocado.com', 's.surovikin@ocado.com', 'alexey.eraskin@ocado.com',
+             'jakub.czuchaj@ocado.com', 'pawel.rybialek@ocado.com', 'evgeni.belchev@ocado.com']
+holidays = ['1/1', '6/1', '4/4', '5/4', '3/5', '4/5', '23/5', '3/6',
+            '15/8', '1/11', '11/11', '24/12', '25/12', '26/12']
+HOLIDAY_SUFFIX = '/2020'
+DATE_FORMAT = "%d/%m/%Y"
 REPORT_DATE = datetime.today()
 events = []
+single_day_events = []
+summaries = {}
 
 
 def dataart_employee(shift):
@@ -22,24 +27,38 @@ def to_date(date):
     return datetime.strptime(date, DATE_FORMAT)
 
 
+def to_holiday_format(date):
+    return str(date.day) + '/' + str(date.month)
+
+
 def day_in_current_month(day_checked):
     today = REPORT_DATE
     firstDayDate = datetime(today.year, today.month, 1)
     lastDayDate = datetime(today.year, today.month, monthrange(today.year, today.month)[1], 23, 59, 59)
-    return (day_checked > firstDayDate) & (day_checked <= lastDayDate)
+    return (day_checked >= firstDayDate) & (day_checked <= lastDayDate)
 
 
 def current_month(shift):
-    event_date_start = to_date(shift['start'])
-    event_date_end = to_date(shift['end'])
+    event_date_start = shift['start']
 
-    startedThisMonth = day_in_current_month(event_date_start)
-    finishedThisMonth = day_in_current_month(event_date_end)
-    return startedThisMonth | finishedThisMonth
+    started_this_month = day_in_current_month(event_date_start)
+    return started_this_month
 
 
-def days_generator():
-    return (eventDateStart + timedelta(x) for x in range((eventDateEnd - eventDateStart).days))
+def separate_into_days_this_month(multi_day_events):
+    separate_days = []
+    for multi_day_event in multi_day_events:
+        start_date = to_date(multi_day_event['start'])
+        end_date = to_date(multi_day_event['end'])
+        event_delta = end_date - start_date
+
+        for i in range(0, event_delta.days):
+            multi_day_event['start'] = start_date + timedelta(days=i)
+            multi_day_event['end'] = start_date + timedelta(days=i)
+            if current_month(multi_day_event):
+                separate_days.append(multi_day_event.copy())
+
+    return separate_days
 
 
 r = requests.get(
@@ -57,25 +76,30 @@ for component in gcal.walk():
             'end': component.get('dtend').dt.strftime(DATE_FORMAT)
         })
 
-for event in events:
-    if current_month(event):
-        holiday = 0
-        for day in holidays:
-            if (to_date(day + HOLIDAY_SUFFIX) > to_date(event['start'])) & (
-                    to_date(day + HOLIDAY_SUFFIX) < to_date(event['end'])):
-                holiday = holiday + 1
+single_day_events = separate_into_days_this_month(events)
 
-        eventDateStart = to_date(event['start'])
-        eventDateEnd = to_date(event['end'])
-        delta = eventDateEnd - eventDateStart
-        if delta < timedelta(days=1):
-            delta = timedelta(days=1)
-        day_gen = days_generator()
-        sum_workday = sum(1 for day in day_gen if (day.weekday() < 4) & day_in_current_month(day))
-        day_gen = days_generator()
-        sum_weekends = sum(1 for day in day_gen if (day.weekday() >= 4) & day_in_current_month(day))
+for event in single_day_events:
+    eventDate = event['start']
+    email = event['person']
 
-        print("{0} - {1} {2}".format(event['start'], event['end'], event['person'].split('@')[0]))
-        print("Mon-Thru: {0}".format(sum_workday))
-        print("Fri-Sun: {0}".format(sum_weekends))
-        print("Holiday: {0} \n".format(holiday) if holiday > 0 else '')
+    if email not in summaries:
+        summaries[email] = PersonSummary(email, 0, 0, 0)
+
+    person = summaries[email]
+
+    if to_holiday_format(eventDate) in holidays:
+        person.holidays += 1
+    else:
+        if eventDate.weekday() < 4:
+            person.business_days += 1
+        else:
+            person.weekends += 1
+
+for email in summaries:
+
+    summary = summaries[email]
+
+    print(summary.name.split('@')[0])
+    print("Mon-Thru: {0}".format(summary.business_days))
+    print("Fri-Sun: {0}".format(summary.weekends))
+    print("Holiday: {0} \n".format(summary.holidays) if summary.holidays > 0 else '')
