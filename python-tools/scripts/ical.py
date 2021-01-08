@@ -33,9 +33,9 @@ def to_holiday_format(date):
 
 def day_in_current_month(day_checked):
     today = REPORT_DATE
-    firstDayDate = datetime(today.year, today.month, 1)
-    lastDayDate = datetime(today.year, today.month, monthrange(today.year, today.month)[1], 23, 59, 59)
-    return (day_checked >= firstDayDate) & (day_checked <= lastDayDate)
+    first_day_date = datetime(today.year, today.month, 1)
+    last_day_date = datetime(today.year, today.month, monthrange(today.year, today.month)[1], 23, 59, 59)
+    return (day_checked >= first_day_date) & (day_checked <= last_day_date)
 
 
 def current_month(shift):
@@ -83,12 +83,13 @@ for event in single_day_events:
     email = event['person']
 
     if email not in summaries:
-        summaries[email] = PersonSummary(email, 0, 0, 0)
+        summaries[email] = PersonSummary(email, 0, 0, 0, '')
 
     person = summaries[email]
 
     if to_holiday_format(eventDate) in holidays:
         person.holidays += 1
+        person.holiday_list += to_holiday_format(eventDate) + ','
     else:
         if eventDate.weekday() < 4:
             person.business_days += 1
@@ -102,4 +103,4 @@ for email in summaries:
     print(summary.name.split('@')[0])
     print("Mon-Thru: {0}".format(summary.business_days))
     print("Fri-Sun: {0}".format(summary.weekends))
-    print("Holiday: {0} \n".format(summary.holidays) if summary.holidays > 0 else '')
+    print("Holiday: {0} ({1})\n".format(summary.holidays, summary.holiday_list) if summary.holidays > 0 else '')
