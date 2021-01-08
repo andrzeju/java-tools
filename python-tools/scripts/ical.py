@@ -11,9 +11,11 @@ employees = ['andrzej.urban@ocado.com', 'marcin.czapla@ocado.com', 's.surovikin@
              'jakub.czuchaj@ocado.com', 'pawel.rybialek@ocado.com', 'evgeni.belchev@ocado.com']
 holidays = ['1/1', '6/1', '4/4', '5/4', '3/5', '4/5', '23/5', '3/6',
             '15/8', '1/11', '11/11', '24/12', '25/12', '26/12']
+holidays_bg = ['1/1', '6/1', '4/4', '5/4', '3/5', '4/5', '23/5', '3/6',
+            '15/8', '1/11', '11/11', '24/12', '25/12', '26/12', '18/12']
 HOLIDAY_SUFFIX = '/2020'
 DATE_FORMAT = "%d/%m/%Y"
-REPORT_DATE = datetime.today()
+REPORT_DATE = datetime.today() - timedelta(days=30)
 events = []
 single_day_events = []
 summaries = {}
@@ -78,6 +80,13 @@ for component in gcal.walk():
 
 single_day_events = separate_into_days_this_month(events)
 
+
+def get_holidays_by_person(email):
+    if email == 'evgeni.belchev@ocado.com':
+        return holidays_bg
+    return holidays
+
+
 for event in single_day_events:
     eventDate = event['start']
     email = event['person']
@@ -87,7 +96,7 @@ for event in single_day_events:
 
     person = summaries[email]
 
-    if to_holiday_format(eventDate) in holidays:
+    if to_holiday_format(eventDate) in get_holidays_by_person(email):
         person.holidays += 1
         person.holiday_list += to_holiday_format(eventDate) + ','
     else:
