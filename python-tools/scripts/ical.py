@@ -7,8 +7,8 @@ from datetime import datetime, timedelta
 from calendar import monthrange
 from scripts.person import PersonSummary
 
-employees = ['andrzej.urban@ocado.com', 'marcin.czapla@ocado.com', 's.surovikin@ocado.com', 'alexey.eraskin@ocado.com',
-             'jakub.czuchaj@ocado.com', 'pawel.rybialek@ocado.com', 'evgeni.belchev@ocado.com']
+employees = ['c.v@xyz.com', 'd.e@ox.com', 's.se@odd.com', 'dd.e@ccd.com',
+             'd.e@fddd.com', 'e.n@d.com', 'r.l@oeo.com']
 holidays = ['1/1', '6/1', '4/4', '5/4', '3/5', '4/5', '23/5', '3/6',
             '15/8', '1/11', '11/11', '24/12', '25/12', '26/12']
 holidays_bg = ['1/1', '3/3', '30/4', '3/5', '4/5', '6/5', '24/5',
@@ -64,8 +64,8 @@ def separate_into_days_this_month(multi_day_events):
 
 
 r = requests.get(
-    'https://ocado-tech-osp.pagerduty.com/private/c24f7099aece486ec80efc7fca6480ca6c5635ae23830da75d564516c5efc067'
-    '/feed/PS0X7ZR')
+    'https://oxo-tech-osp.pagerduty.com/private/sdf37sdui8je'
+    '/feed/PS0X7VVVZR')
 icalfile = r.text
 
 gcal = icalendar.Calendar.from_ical(icalfile)
@@ -82,7 +82,7 @@ single_day_events = separate_into_days_this_month(events)
 
 
 def get_holidays_by_person(person_email):
-    if person_email == 'evgeni.belchev@ocado.com':
+    if person_email == 's.e@xxc.com':
         return holidays_bg
     return holidays
 
